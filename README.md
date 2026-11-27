@@ -155,7 +155,7 @@ versus the previous close.
 ## Terms
 
 The feed is free to read and display with a visible credit —
-"Trifecta Oscillator by Trifecta Signals" — linking back to
+"Market Oscillator by Trifecta Signals" — linking back to
 https://trifectasignals.com/oscillator. The data is provided as-is,
 without warranty, and is not financial advice. The Trifecta Signals
 name and logo are not licensed by this repository.
