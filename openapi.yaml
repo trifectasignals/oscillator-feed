@@ -1,0 +1,487 @@
+openapi: 3.0.3
+info:
+  title: Trifecta Signals — Free Market Feeds
+  version: 1.0.0
+  description: 'Trifecta Signals publishes two free market readings, each updated once a day after the
+    US market close and served as plain JSON over HTTPS -- no key, no signup.
+
+
+    **Trifecta Fear Gauge** (`/fear-gauge.json`): a 0-100 market-sentiment gauge. It reads U.S. market
+    conditions once a day, after the close, and expresses them as a single number and zone. The gauge
+    is close-based by design: one reading per trading day, from the daily close, and it does not react
+    to intraday moves. An RSS version of the same reading is published at https://trifectasignals.com/fear-gauge.xml.
+    Field reference and examples: https://github.com/trifectasignals/fear-gauge-feed
+
+
+    **Trifecta Oscillator** (`/oscillator.json`): a market-breadth oscillator. It reads U.S. market breadth
+    once a day, after the close, and expresses how much stress the average stock is under as a single
+    number and zone. Negative readings mean selling across the average stock has reached oversold territory;
+    positive readings mean the average stock is stretched into overbought territory; around zero, breadth
+    is in balance. It is close-based by design and does not move intraday. Field reference and examples:
+    https://github.com/trifectasignals/oscillator-feed
+
+
+    Terms: both feeds are free to read and display with a visible credit -- "Fear Gauge by Trifecta Signals"
+    linking to https://trifectasignals.com/fear-gauge, and "Trifecta Oscillator by Trifecta Signals" linking
+    to https://trifectasignals.com/oscillator. The data is provided as-is, without warranty, and is not
+    financial advice.'
+  contact:
+    name: Trifecta Signals
+    url: https://trifectasignals.com
+    email: support@trifectasignals.com
+  license:
+    name: Free to display with visible credit (see description)
+    url: https://trifectasignals.com/fear-gauge
+servers:
+- url: https://trifectasignals.com
+  description: Production
+tags:
+- name: Fear Gauge
+  description: The daily sentiment reading and its full history.
+- name: Oscillator
+  description: The daily breadth reading and its full history.
+paths:
+  /fear-gauge.json:
+    get:
+      tags:
+      - Fear Gauge
+      summary: Current Fear Gauge reading, components, and full daily series
+      description: 'Returns the current reading (value, zone, as of the most recent
+
+        close), the previous close''s reading and the change, the six
+
+        published component readings, recent readings, day counts by zone
+
+        over several windows, and the full daily series back to
+
+        January 2, 2020.
+
+        '
+      operationId: getFearGauge
+      responses:
+        '200':
+          description: The current Fear Gauge feed payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FearGaugeFeed'
+              example:
+                gauge: Trifecta Fear Gauge
+                basis: daily close
+                value: 13.86
+                zone: Extreme Fear
+                asOf: '2026-11-25'
+                prevValue: 14.85
+                prevDate: '2026-11-24'
+                prevZone: Extreme Fear
+                change: -0.99
+                components:
+                  momentum: 4.86
+                  volatility: 3.27
+                  safeHaven: 2.68
+                  junk: 50.69
+                  breadth: 2.08
+                  strength: 19.54
+                componentLabels:
+                  momentum: Momentum
+                  volatility: Volatility
+                  safeHaven: Safe-Haven Demand
+                  junk: Junk Bond Demand
+                  breadth: Breadth
+                  strength: Strength
+  /fear-gauge.xml:
+    get:
+      tags:
+      - Fear Gauge
+      summary: RSS version of the same daily reading
+      operationId: getFearGaugeRss
+      responses:
+        '200':
+          description: An RSS feed carrying the current Fear Gauge reading.
+          content:
+            application/rss+xml:
+              schema:
+                type: string
+  /oscillator.json:
+    get:
+      tags:
+      - Oscillator
+      summary: Current oscillator reading and full daily series
+      description: 'Returns the current reading (value, zone, as of the most recent
+
+        close), the previous close''s reading and the change, the state of
+
+        the current oversold episode, recent readings, and the full daily
+
+        series back to October 18, 1999. Readings before October 2018 are
+
+        reconstructed, and are labeled as reconstructed on the oscillator
+
+        page.
+
+        '
+      operationId: getOscillator
+      responses:
+        '200':
+          description: The current oscillator feed payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OscillatorFeed'
+              example:
+                gauge: Trifecta Oscillator
+                basis: daily close
+                value: -5.68
+                zone: Oversold
+                asOf: '2026-11-25'
+                prevValue: -8.25
+                prevDate: '2026-11-24'
+                prevZone: Oversold
+                change: 2.56
+                episodeDay: 5
+                firstOversold: '2026-11-19'
+components:
+  schemas:
+    FearGaugeZone:
+      type: string
+      description: 'Sentiment zone for a reading. Bands: Extreme Fear 0–25, Fear 25–45,
+
+        Neutral 45–55, Greed 55–75, Extreme Greed 75–100. Each band starts
+
+        at its lower bound (a reading of exactly 25 is Fear).
+
+        '
+      enum:
+      - Extreme Fear
+      - Fear
+      - Neutral
+      - Greed
+      - Extreme Greed
+    BandWindow:
+      type: object
+      description: Day counts by zone over one window.
+      properties:
+        days:
+          type: array
+          description: Day counts aligned with the `bands` name list.
+          items:
+            type: integer
+        n:
+          type: integer
+          description: Total trading days in the window.
+        span:
+          type: string
+          description: Human-readable span of the window.
+      required:
+      - days
+      - n
+      - span
+    FearGaugeFeed:
+      type: object
+      properties:
+        gauge:
+          type: string
+          description: 'Feed name: "Trifecta Fear Gauge".'
+          example: Trifecta Fear Gauge
+        basis:
+          type: string
+          description: 'How the reading is computed: "daily close".'
+          example: daily close
+        value:
+          type: number
+          description: Current gauge reading, 0–100, one decimal.
+          example: 13.86
+        zone:
+          $ref: '#/components/schemas/FearGaugeZone'
+        asOf:
+          type: string
+          format: date
+          description: Date of the current reading (YYYY-MM-DD).
+          example: '2026-11-25'
+        prevValue:
+          type: number
+          description: Reading at the previous close.
+          example: 14.85
+        prevDate:
+          type: string
+          format: date
+          description: Date of the previous close.
+          example: '2026-11-24'
+        prevZone:
+          $ref: '#/components/schemas/FearGaugeZone'
+        change:
+          type: number
+          description: '`value` minus `prevValue`.'
+          example: -0.99
+        components:
+          type: object
+          description: 'The gauge''s published component readings (each 0–100, oriented
+
+            the same way as the gauge — low is fearful, high is greedy),
+
+            keyed by component id.
+
+            '
+          properties:
+            momentum:
+              type: number
+              description: The market's recent price trend.
+            volatility:
+              type: number
+              description: The size of the market's price swings.
+            safeHaven:
+              type: number
+              description: Whether money has been moving toward defensive assets or away from them.
+            junk:
+              type: number
+              description: Appetite for lower-rated corporate bonds.
+            breadth:
+              type: number
+              description: How broadly stocks are participating in a move.
+            strength:
+              type: number
+              description: The balance between stocks reaching new highs and new lows.
+          required:
+          - momentum
+          - volatility
+          - safeHaven
+          - junk
+          - breadth
+          - strength
+        componentLabels:
+          type: object
+          description: Human-readable label for each component id.
+          additionalProperties:
+            type: string
+        recent:
+          type: array
+          description: The most recent readings.
+          items:
+            $ref: '#/components/schemas/FearGaugeDatedReading'
+        history:
+          type: array
+          description: A longer run of recent readings (the last 30).
+          items:
+            $ref: '#/components/schemas/FearGaugeDatedReading'
+        bands:
+          type: object
+          description: Day counts by zone over several windows.
+          properties:
+            asOf:
+              type: string
+              format: date
+            bands:
+              type: array
+              description: Zone names, in the order the `days` counts follow.
+              items:
+                $ref: '#/components/schemas/FearGaugeZone'
+            windows:
+              type: object
+              description: 'Keyed by window: `all` (full history), `w` (last 5 trading
+
+                days), `m` (last 21 trading days), `ytd`, `y` (last 252
+
+                trading days), and one key per calendar year (`y2020`,
+
+                `y2021`, …).
+
+                '
+              additionalProperties:
+                $ref: '#/components/schemas/BandWindow'
+        page:
+          type: string
+          format: uri
+          description: URL of the gauge page.
+          example: https://trifectasignals.com/fear-gauge
+        feed:
+          type: string
+          format: uri
+          description: URL of the RSS version.
+          example: https://trifectasignals.com/fear-gauge.xml
+        series:
+          type: array
+          description: The full history as [date, value] pairs, back to January 2020.
+          items:
+            type: array
+            description: 'A [date, value] pair: the trading day (YYYY-MM-DD) and the reading.'
+            minItems: 2
+            maxItems: 2
+            items: {}
+      required:
+      - gauge
+      - basis
+      - value
+      - zone
+      - asOf
+      - prevValue
+      - prevDate
+      - prevZone
+      - change
+      - components
+      - componentLabels
+      - recent
+      - history
+      - bands
+      - page
+      - feed
+      - series
+    FearGaugeDatedReading:
+      type: object
+      description: One daily reading.
+      properties:
+        date:
+          type: string
+          format: date
+          description: Trading day of the reading.
+        value:
+          type: number
+          description: Gauge reading, 0–100, one decimal.
+        zone:
+          $ref: '#/components/schemas/FearGaugeZone'
+      required:
+      - date
+      - value
+      - zone
+    OscillatorZone:
+      type: string
+      description: 'Zone for a reading. Bands: Extreme Oversold at −10 or lower;
+
+        Oversold above −10 through −5; Neutral between −5 and +5;
+
+        Overbought from +5 through below +10; Extreme Overbought at +10
+
+        or higher. (Trifecta''s gauge alerts use a wider rung scale on the
+
+        same reading — Deep Oversold at −20, Deep Overbought at +20 —
+
+        but the feed''s `zone` field uses these five bands.)
+
+        '
+      enum:
+      - Extreme Oversold
+      - Oversold
+      - Neutral
+      - Overbought
+      - Extreme Overbought
+    OscillatorFeed:
+      type: object
+      properties:
+        gauge:
+          type: string
+          description: 'Feed name: "Trifecta Oscillator".'
+          example: Trifecta Oscillator
+        basis:
+          type: string
+          description: 'How the reading is computed: "daily close".'
+          example: daily close
+        value:
+          type: number
+          description: Current oscillator reading, at two decimals.
+          example: -5.68
+        zone:
+          $ref: '#/components/schemas/OscillatorZone'
+        asOf:
+          type: string
+          format: date
+          description: Date of the current reading (YYYY-MM-DD).
+          example: '2026-11-25'
+        prevValue:
+          type: number
+          description: Reading at the previous close.
+          example: -8.25
+        prevDate:
+          type: string
+          format: date
+          description: Date of the previous close.
+          example: '2026-11-24'
+        prevZone:
+          $ref: '#/components/schemas/OscillatorZone'
+        change:
+          type: number
+          description: '`value` minus `prevValue`, computed from the underlying
+
+            full-precision daily prints before rounding — it can differ
+
+            by 0.01 from the difference of the two rounded values shown.
+
+            '
+          example: 2.56
+        episodeDay:
+          type: number
+          description: 'Day number of the current oversold episode (consecutive
+
+            closes at −5 or lower). 0 when the current close is not
+
+            oversold.
+
+            '
+          example: 5
+        firstOversold:
+          type: string
+          format: date
+          description: 'Date the current oversold episode began (the first close at
+
+            −5 or lower); null when the oscillator is not in an oversold
+
+            episode.
+
+            '
+          example: '2026-11-19'
+          nullable: true
+        recent:
+          type: array
+          description: The most recent 7 readings.
+          items:
+            $ref: '#/components/schemas/OscillatorDatedReading'
+        history:
+          type: array
+          description: The most recent 30 readings.
+          items:
+            $ref: '#/components/schemas/OscillatorDatedReading'
+        page:
+          type: string
+          format: uri
+          description: URL of the oscillator page.
+          example: https://trifectasignals.com/oscillator
+        series:
+          type: array
+          description: The full history as [date, value] pairs, back to October 1999.
+          items:
+            type: array
+            description: 'A [date, value] pair: the trading day (YYYY-MM-DD) and the reading.'
+            minItems: 2
+            maxItems: 2
+            items: {}
+      required:
+      - gauge
+      - basis
+      - value
+      - zone
+      - asOf
+      - prevValue
+      - prevDate
+      - prevZone
+      - change
+      - episodeDay
+      - firstOversold
+      - recent
+      - history
+      - page
+      - series
+    OscillatorDatedReading:
+      type: object
+      description: One daily reading.
+      properties:
+        date:
+          type: string
+          format: date
+          description: Trading day of the reading.
+        value:
+          type: number
+          description: Oscillator reading, at two decimals.
+        zone:
+          $ref: '#/components/schemas/OscillatorZone'
+      required:
+      - date
+      - value
+      - zone
