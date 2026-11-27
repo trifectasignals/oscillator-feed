@@ -7,6 +7,8 @@ average stock is under as a single number and zone. The oscillator page —
 with the chart and its full history — is at
 **https://trifectasignals.com/oscillator**.
 
+![Trifecta Oscillator — current reading card](preview.png)
+
 ## What the oscillator is
 
 One number for how much stress the average stock is under. It reads
